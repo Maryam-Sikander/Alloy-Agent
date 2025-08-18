@@ -1,22 +1,29 @@
 import asyncio
-from app.date_worker import calculate_date
-from app.utils import PostgresSaverCustom
-from psycopg_pool import ConnectionPool
 import os
-from langgraph.types import Command
-from typing import Literal
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-from typing import Annotated, Sequence
-from langgraph.graph import StateGraph
-from langgraph.graph import START, END
-from langchain_core.messages import SystemMessage, trim_messages
-from dotenv import load_dotenv, find_dotenv
+import sqlite3
+from typing import Literal, Annotated, Sequence
 from typing_extensions import TypedDict
+from psycopg_pool import ConnectionPool
+from app.utils import PostgresSaverCustom
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+import aiosqlite
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.types import Command
+from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    trim_messages,
+)
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv, find_dotenv
+
+from app.date_worker import calculate_date
 from app.calendar_workers import calendar_workers_dict
 from app.email_workers import email_workers_dict
-
 from app.prompts import (
     ENTRY_PROMPT_ORCHESTRATOR,
     RESPONSE_PROMPT_ORCHESTRATOR,
@@ -27,7 +34,6 @@ from app.prompts import (
     CALENDAR_MANAGER_SYSTEM_PROMPT,
     EMAIL_MANAGER_SYSTEM_PROMPT,
 )
-
 from app.schemas import (
     orchestrator_outputs_tuple,
     OrchestratorRouterList,
@@ -36,6 +42,7 @@ from app.schemas import (
     OrchestratorRouter,
 )
 
+# Load env
 _ = load_dotenv(find_dotenv())
 
 ENTRY_POINT_TEMPLATE = """
@@ -362,21 +369,28 @@ orchestrator_builder.add_node("feedback_synthesizer", feedback_synthesizer_node)
 orchestrator_builder.add_edge(START, "orchestrator_input")
 
 
-DB_URI = os.environ.get("POSTGRES_DB_URI")
-connection_kwargs = {
-    "autocommit": True,
-    "prepare_threshold": 0,
-}
 
+async def init_orchestrator():
+    """Initialize the orchestrator graph with Postgres if available, else SQLite."""
+    db_uri = os.getenv("POSTGRES_DB_URI")
 
-pool = ConnectionPool(
-    # Example configuration
-    conninfo=DB_URI,
-    max_size=20,
-    kwargs=connection_kwargs,
-)
-checkpointer = PostgresSaverCustom(pool)
+    if db_uri:
+        # Prefer PostgreSQL
+        connection_kwargs = {
+            "autocommit": True,
+            "prepare_threshold": 0,
+        }
+        pool = ConnectionPool(
+            conninfo=db_uri,
+            max_size=20,
+            kwargs=connection_kwargs,
+        )
+        checkpointer = PostgresSaverCustom(pool)
+        checkpointer.setup()  # Postgres saver uses sync setup
+        return orchestrator_builder.compile(checkpointer=checkpointer)
 
-# NOTE: you need to call .setup() the first time you're using your checkpointer
-checkpointer.setup()
-orchestrator_graph = orchestrator_builder.compile(checkpointer=checkpointer)
+    # Fallback to SQLite (async)
+    conn = await aiosqlite.connect("checkpoints.db")
+    checkpointer = AsyncSqliteSaver(conn)
+    await checkpointer.setup()
+    return orchestrator_builder.compile(checkpointer=checkpointer)
