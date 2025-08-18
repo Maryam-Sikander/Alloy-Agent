@@ -1,5 +1,6 @@
 from typing import Any, Dict, Literal, Optional
 from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import (
     ChannelVersions,
@@ -12,16 +13,10 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.types import Command
 
 
+# Postgres Saver (async wrapper)
+
 class PostgresSaverCustom(PostgresSaver):
     async def aget_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
-        """Asynchronously fetch a checkpoint tuple using the given configuration.
-
-        Args:
-            config (RunnableConfig): Configuration specifying which checkpoint to retrieve.
-
-        Returns:
-            Optional[CheckpointTuple]: The requested checkpoint tuple, or None if not found.
-        """
         return self.get_tuple(config)
 
     async def alist(
@@ -32,19 +27,6 @@ class PostgresSaverCustom(PostgresSaver):
         before: Optional[RunnableConfig] = None,
         limit: Optional[int] = None,
     ) -> AsyncIterator[CheckpointTuple]:
-        """Asynchronously list checkpoints that match the given criteria.
-
-        Args:
-            config (Optional[RunnableConfig]): Base configuration for filtering checkpoints.
-            filter (Optional[Dict[str, Any]]): Additional filtering criteria for metadata.
-            before (Optional[RunnableConfig]): List checkpoints created before this configuration.
-            limit (Optional[int]): Maximum number of checkpoints to return.
-
-        Returns:
-            AsyncIterator[CheckpointTuple]: Async iterator of matching checkpoint tuples.
-
-
-        """
         for item in self.list(config, filter=filter, before=before, limit=limit):
             yield item
 
@@ -55,17 +37,6 @@ class PostgresSaverCustom(PostgresSaver):
         metadata: CheckpointMetadata,
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
-        """Asynchronously store a checkpoint with its configuration and metadata.
-
-        Args:
-            config (RunnableConfig): Configuration for the checkpoint.
-            checkpoint (Checkpoint): The checkpoint to store.
-            metadata (CheckpointMetadata): Additional metadata for the checkpoint.
-            new_versions (ChannelVersions): New channel versions as of this write.
-
-        Returns:
-            RunnableConfig: Updated configuration after storing the checkpoint.
-        """
         return self.put(config, checkpoint, metadata, new_versions)
 
     async def aput_writes(
@@ -75,28 +46,52 @@ class PostgresSaverCustom(PostgresSaver):
         task_id: str,
         task_path: str = "",
     ) -> None:
-        """Asynchronously store intermediate writes linked to a checkpoint.
-
-        Args:
-            config (RunnableConfig): Configuration of the related checkpoint.
-            writes (List[Tuple[str, Any]]): List of writes to store.
-            task_id (str): Identifier for the task creating the writes.
-            task_path (str): Path of the task creating the writes.
-        """
         return self.put_writes(config, writes, task_id, task_path)
 
 
-# NOTE: UNUSED function
+# SQLite Saver (async wrapper)
+
+class SqliteSaverCustom(SqliteSaver):
+    async def aget_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
+        return self.get_tuple(config)
+
+    async def alist(
+        self,
+        config: Optional[RunnableConfig],
+        *,
+        filter: Optional[Dict[str, Any]] = None,
+        before: Optional[RunnableConfig] = None,
+        limit: Optional[int] = None,
+    ) -> AsyncIterator[CheckpointTuple]:
+        for item in self.list(config, filter=filter, before=before, limit=limit):
+            yield item
+
+    async def aput(
+        self,
+        config: RunnableConfig,
+        checkpoint: Checkpoint,
+        metadata: CheckpointMetadata,
+        new_versions: ChannelVersions,
+    ) -> RunnableConfig:
+        return self.put(config, checkpoint, metadata, new_versions)
+
+    async def aput_writes(
+        self,
+        config: RunnableConfig,
+        writes: Sequence[tuple[str, Any]],
+        task_id: str,
+        task_path: str = "",
+    ) -> None:
+        return self.put_writes(config, writes, task_id, task_path)
+
+
+# -----------------------------
+# Misc Helpers
+# -----------------------------
 def query_in_messages(query: str, name: str, messages: list[BaseMessage]) -> bool:
     """
     Checks if the query already exists in the message content and if the name is the same.
-
-    Args:
-    query (str): The query to search for in the message content.
-    name (str): The name to verify in the message.
-    messages (list[BaseMessage]): The list of messages
-    Returns:
-    bool: True if the query is found twice to already exist in the message content and the name is the same, False otherwise.
+    Returns True if the query is found twice with same name.
     """
     count = 0
     for message in messages:
@@ -130,13 +125,14 @@ def create_agent_calendar_node(
                     )
                 ],
             },
-            # We want our workers to ALWAYS "report back" to the supervisor when done
+            # Workers always report back to supervisor
             goto=supervisor_node_name,
         )
 
     return calendar_node
 
 
+# Feedback Prompt
 FEEDBACK_GENERIC_PROMPT = """You have the following conversation history of multiple AI-generated messages:
 ----
 
