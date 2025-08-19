@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
@@ -11,10 +11,10 @@ load_dotenv()
 
 
 config = Config()
-api_key = os.getenv("GOOGLE_API_KEY")
 PAKISTAN_TZ = pytz.timezone(config.get("configurable", "timezone"))
-llm = ChatGoogleGenerativeAI(model=config.get("configurable", "llm-model"),
-                             google_api_key=api_key, temperature=config.get("configurable", "llm-temperature"))
+llm = ChatOpenAI(model=config.get("configurable", "llm-model"),
+                              temperature=config.get("configurable", "llm-temperature"),
+                             base_url="https://api.aimlapi.com/v1")
 
 
 DATE_WORKER_SYSTEM_PROMPT = f"""

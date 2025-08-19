@@ -18,7 +18,7 @@ from langchain_core.messages import (
     SystemMessage,
     trim_messages,
 )
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv, find_dotenv
 from config.config import Config
 
@@ -84,10 +84,12 @@ class GraphState(TypedDict):
     manager_list: list[OrchestratorRouter]
 
 
-llm_orchestrator =ChatGoogleGenerativeAI(model=config.get("configurable", "llm-model"),
-                             temperature=config.get("configurable", "llm-temperature"))
-llm = ChatGoogleGenerativeAI(model=config.get("configurable", "llm-model"),
-                             temperature=config.get("configurable", "llm-temperature"))
+llm_orchestrator =ChatOpenAI(model=config.get("configurable", "llm-model"),
+                              temperature=config.get("configurable", "llm-temperature"),
+                             base_url="https://api.aimlapi.com/v1")
+llm = ChatOpenAI(model=config.get("configurable", "llm-model"),
+                              temperature=config.get("configurable", "llm-temperature"),
+                             base_url="https://api.aimlapi.com/v1")
 
 trimmer = trim_messages(
     max_tokens=7,  # to keep the last 3 interactions messages

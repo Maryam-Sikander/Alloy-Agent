@@ -2,7 +2,8 @@ from langchain_core.tools import StructuredTool
 import os
 from langchain_core.messages import BaseMessage, AnyMessage
 from pydantic import BaseModel
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from config.config import Config
 from composio_langchain import ComposioToolSet
 from typing import Annotated, Any, Literal, Sequence
 from langgraph.graph import StateGraph
@@ -110,8 +111,10 @@ def tools_condition_worker(
 
 
 composio_toolset = ComposioToolSet()
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.0)
-
+config = Config()
+llm = ChatOpenAI(model=config.get("configurable", "llm-model"),
+                              temperature=config.get("configurable", "llm-temperature"),
+                             base_url="https://api.aimlapi.com/v1")
 
 def wrapper_funct_fetch_emails(tool: StructuredTool):
     """
