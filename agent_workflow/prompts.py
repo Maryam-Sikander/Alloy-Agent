@@ -1,9 +1,9 @@
 from langchain.prompts import PromptTemplate
-from app.calendar_workers import (
+from agent_workflow.calendar_workers import (
     calendar_workers_info_dict,
     calendar_worker_summary_list,
 )
-from app.email_workers import email_workers_info_dict, email_worker_summary_list
+from agent_workflow.email_workers import email_workers_info_dict, email_worker_summary_list
 
 FEEDBACK_CALENDAR_MANAGER_PROMPT = """You have the following conversation history consisting of multiple AI-generated messages:
 

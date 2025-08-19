@@ -4,7 +4,7 @@ import sqlite3
 from typing import Literal, Annotated, Sequence
 from typing_extensions import TypedDict
 from psycopg_pool import ConnectionPool
-from app.utils import PostgresSaverCustom
+from agent_workflow.database import PostgresSaverCustom
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 import aiosqlite
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -20,11 +20,12 @@ from langchain_core.messages import (
 )
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv, find_dotenv
+from config.config import Config
 
-from app.date_worker import calculate_date
-from app.calendar_workers import calendar_workers_dict
-from app.email_workers import email_workers_dict
-from app.prompts import (
+from agent_workflow.date_worker import calculate_date
+from agent_workflow.calendar_workers import calendar_workers_dict
+from agent_workflow.email_workers import email_workers_dict
+from agent_workflow.prompts import (
     ENTRY_PROMPT_ORCHESTRATOR,
     RESPONSE_PROMPT_ORCHESTRATOR,
     feedback_email_manager_prompt_template,
@@ -34,7 +35,7 @@ from app.prompts import (
     CALENDAR_MANAGER_SYSTEM_PROMPT,
     EMAIL_MANAGER_SYSTEM_PROMPT,
 )
-from app.schemas import (
+from agent_workflow.schemas import (
     orchestrator_outputs_tuple,
     OrchestratorRouterList,
     CalendarRouterList,
@@ -69,6 +70,7 @@ MANAGER_TEMPLATE = """
 {manager_response_context}
 """
 
+config = Config()
 
 class GraphState(TypedDict):
     """The state of the supervisor agents."""
@@ -82,8 +84,10 @@ class GraphState(TypedDict):
     manager_list: list[OrchestratorRouter]
 
 
-llm_orchestrator = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.0)
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.0)
+llm_orchestrator =ChatGoogleGenerativeAI(model=config.get("configurable", "llm-model"),
+                             temperature=config.get("configurable", "llm-temperature"))
+llm = ChatGoogleGenerativeAI(model=config.get("configurable", "llm-model"),
+                             temperature=config.get("configurable", "llm-temperature"))
 
 trimmer = trim_messages(
     max_tokens=7,  # to keep the last 3 interactions messages
@@ -387,10 +391,13 @@ async def init_orchestrator():
         )
         checkpointer = PostgresSaverCustom(pool)
         checkpointer.setup()  # Postgres saver uses sync setup
-        return orchestrator_builder.compile(checkpointer=checkpointer)
+        orchestrator_graph = orchestrator_builder.compile(checkpointer=checkpointer)
+        return orchestrator_graph
 
     # Fallback to SQLite (async)
     conn = await aiosqlite.connect("checkpoints.db")
     checkpointer = AsyncSqliteSaver(conn)
     await checkpointer.setup()
-    return orchestrator_builder.compile(checkpointer=checkpointer)
+    orchestrator_graph = orchestrator_builder.compile(checkpointer=checkpointer)
+
+    return orchestrator_graph

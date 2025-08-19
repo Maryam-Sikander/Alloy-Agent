@@ -12,12 +12,15 @@ from dotenv import load_dotenv, find_dotenv
 from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
 from datetime import datetime
+from config.config import Config
 import pytz
 
-PAKISTAN_TZ = pytz.timezone("Asia/Karachi")
-
+config = Config()
+PAKISTAN_TZ = pytz.timezone(config.get("configurable", "timezone"))
 _ = load_dotenv(find_dotenv())
-CALENDAR_WORKER_TEMPLATE = """
+
+
+CALENDAR_WORKER_TEMPLATE = f"""
 You excel at managing calendars and providing necessary information using the available tools. Always use this information as the foundation for managing the calendar.
 
 ### **Time Formats**
@@ -32,10 +35,10 @@ You excel at managing calendars and providing necessary information using the av
    * This applies to both the **start time** and **end time** of events but **only for the final response to the user**.
 
 ### **General Guidelines**
-- Always use the **Asia/Karachi** timezone.
+- Always use the {PAKISTAN_TZ} timezone.
   * Always include `timeZone: 'Asia/Karachi'` in **all event creation and update operations**.
 - Always provide responses in a clear, concise, and informative manner using markdown formatting.
-- It is mandatory to state in the user's answer that this information is based on the **{calendar_info}**.
+- It is mandatory to state in the user's answer that this information is based on the **calendar_info**.
 ---
 
 ## **Event Management Rules**
@@ -96,7 +99,7 @@ You excel at managing calendars and providing necessary information using the av
 ---
 
 ### **Current Date**
-* If the user does **not** provide a specific date in their request, use the current system date: **{current_date}**.
+* If the user does **not** provide a specific date in their request, use the current system date: **current_date**.
 * If the user specifies a date, always prioritize the user-provided date over the system date.
 ---
 

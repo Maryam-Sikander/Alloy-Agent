@@ -1,8 +1,8 @@
 from typing import List, Literal
 
 from pydantic import BaseModel, Field
-from app.calendar_workers import calendar_workers_dict
-from app.email_workers import email_workers_dict
+from agent_workflow.calendar_workers import calendar_workers_dict
+from agent_workflow.email_workers import email_workers_dict
 
 calendar_manager_outputs_tuple = tuple(calendar_workers_dict.keys())
 email_manager_outputs_tuple = tuple(email_workers_dict.keys())
