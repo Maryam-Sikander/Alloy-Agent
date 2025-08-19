@@ -7,7 +7,6 @@ local
 .DS_Store
 .idea
 .composio.lock
-agent_workflow/discord_bot.py
 docker-compose.yml
 Dockerfile
 README.md
