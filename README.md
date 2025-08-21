@@ -1,6 +1,8 @@
-# AI-Agents Project
+# Google AI Agent
+<img width="500" height="500" alt="ChatGPT Image Aug 21, 2025, 10_48_40 PM" src="https://github.com/user-attachments/assets/421f9a36-fbac-4f11-aa00-795be2b93435" />
 
-AI-Agents is a modular and extensible system designed with a hierarchical architecture. An orchestrator intelligently routes user requests to specialized managers based on context. The current implementation includes a **Calendar Manager** that delegates tasks to personal and work calendar agents. The architecture supports easy expansion to additional managers for other domains. The system leverages **LangGraph**, **LangChain**, and **OpenAI's GPT-5**, enabling structured decision-making, efficient task execution, and seamless response synthesis, making it adaptable for various automation scenarios.
+
+Google AI Agent is a modular and extensible system designed with a hierarchical architecture. An orchestrator intelligently routes user requests to specialized managers based on context. The current implementation includes a **Calendar Manager** that delegates tasks to personal and work calendar agents. The architecture supports easy expansion to additional managers for other domains. The system leverages **LangGraph**, **LangChain**, and **OpenAI's GPT-5**, enabling structured decision-making, efficient task execution, and seamless response synthesis, making it adaptable for various automation scenarios.
 
 ---
 
