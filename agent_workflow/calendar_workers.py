@@ -1,8 +1,8 @@
 import os
 from langchain_core.messages import BaseMessage, AnyMessage
 from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
 from composio_langchain import ComposioToolSet
+from langchain_openai import ChatOpenAI
 from typing import Annotated, Any, Literal, Sequence
 from langgraph.graph import StateGraph
 from langgraph.graph import START, END
@@ -20,14 +20,14 @@ PAKISTAN_TZ = pytz.timezone(config.get("configurable", "timezone"))
 _ = load_dotenv(find_dotenv())
 
 
-CALENDAR_WORKER_TEMPLATE = f"""
+CALENDAR_WORKER_TEMPLATE = """
 You excel at managing calendars and providing necessary information using the available tools. Always use this information as the foundation for managing the calendar.
 
 ### **Time Formats**
 1. **FIND FREE SLOTS** and **FIND EVENTS** actions: Use the comma-separated format `YYYY,MM,DD,hh,mm,ss`. For example, `2025,10,27,12,58,00`.
 
-2. **CREATE EVENT** or **UPDATE EVENT** actions: Use the naive date/time format `YYYY-MM-DDTHH:MM:SS`, with **no offsets or "Z"**. For example, `2025-01-16T13:00:00`.
-
+2. **CREATE EVENT** or **UPDATE EVENT** actions: Use the naive date/time format `YYYY-MM-DDTHH:MM:SS`, with **no offsets or "Z"**. For example, `2025-01-16T13:00:00`. 
+[Compulsory]Automatically covert in this format no matter what the user give you!
 3. **Final User Response Format**
    * When providing a response to the user, always format dates in the following way:
      **Month day, year, hour in 24-hour format**.
@@ -35,10 +35,10 @@ You excel at managing calendars and providing necessary information using the av
    * This applies to both the **start time** and **end time** of events but **only for the final response to the user**.
 
 ### **General Guidelines**
-- Always use the {PAKISTAN_TZ} timezone.
+- Always use the **Asia/Karachi** timezone.
   * Always include `timeZone: 'Asia/Karachi'` in **all event creation and update operations**.
 - Always provide responses in a clear, concise, and informative manner using markdown formatting.
-- It is mandatory to state in the user's answer that this information is based on the **calendar_info**.
+- It is mandatory to state in the user's answer that this information is based on the **{calendar_info}**.
 ---
 
 ## **Event Management Rules**
@@ -62,7 +62,7 @@ You excel at managing calendars and providing necessary information using the av
    * Once the event is successfully created, confirm the details to the user, including:
      - Event title
      - Start and end time (formatted as **Month day, year, 24-hour time**).
-     - Google Calendar link + Meet Link
+     - Any additional details provided.
 ---
 
 ### **Updating Events**
@@ -99,15 +99,18 @@ You excel at managing calendars and providing necessary information using the av
 ---
 
 ### **Current Date**
-* If the user does **not** provide a specific date in their request, use the current system date: **current_date**.
+* If the user does **not** provide a specific date in their request, use the current system date: **{current_date}**.
 * If the user specifies a date, always prioritize the user-provided date over the system date.
 ---
 
 ### **Error Prevention**
 * If the user provides input in the wrong format, clarify the expected format based on the requested action and ask for corrected input.
 * If the system detects conflicting events, always prioritize informing the user about the conflict over performing the requested action.
-"""
 
+### **Final User's Answer Format**
+- It is manadatory to format all this properly format the message using good markdowns techniques. That would be readable and professional.
+- Add redirect google calender where you have arranged the meeting for verification purposes[MANDATORY]
+"""
 
 class WorkersState(TypedDict):
     """The state of the worker agents."""
@@ -126,6 +129,7 @@ def tools_condition_worker(
 
 
 composio_toolset = ComposioToolSet()
+
 llm = ChatOpenAI(model=config.get("configurable", "llm-model"),
                               temperature=config.get("configurable", "llm-temperature"),
                              base_url="https://api.aimlapi.com/v1")

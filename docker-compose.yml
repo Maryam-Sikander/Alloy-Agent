@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: my_postgres_chechpoint
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=checkpoint_lgraph
+    volumes:
+      # to keep the data persistent
+      - ./local/postgres_data:/var/lib/postgresql/data
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: my-discord-bot
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file: .env
+    volumes:
+      - .:/agent_workflow
+    command: ["python", "-m", "agent_workflow.discord_bot"]
+    environment:
+      - POSTGRES_DB_URI=...
