@@ -194,29 +194,48 @@ In the **Bot settings** (Discord Developer Portal):
 
 ---
 
-### 5. Running the Project
+## Clone the Repository
 
-You can either run locally or use Docker.
-
-#### Local 
-1. Using Pip
 ```bash
+git clone https://github.com/your-username/alloy-agent.git
+cd alloy-agent
+```
+
+## Configuration
+
+### Environment Variables
+Set up all variables discussed above in your `.env` file (Composio, Google API, Discord bot, PostgreSQL URI if used).
+
+### `config.ini`
+Update the `config.ini` file for agent or manager-specific configurations such as:
+- Default account preferences
+- Logging levels
+- Optional experimental features
+
+---
+
+## Running the Project
+
+### Local Run
+
+#### Using Pip
+```python
 pip install -r requirements.txt
 python -m agent_workflow.discord_bot
 ```
-2. Using Poetry
-```bash
+
+#### Using Poetry
+```python
 poetry install
 poetry shell
 poetry run python -m agent_workflow.discord_bot
-```  
-#### Docker Run
-Build and run with Docker Compose:
-
-```bash
-docker compose up --build
 ```
 
+### Docker Run
+Build and run with Docker Compose:
+```python
+docker compose up --build
+```
 ---
 
 ### 6. Quick Test
@@ -231,5 +250,18 @@ The bot should parse the date, check availability in Google Calendar, and return
 Example:
 ![Img](https://github.com/user-attachments/assets/9ab75221-095d-437d-ab30-d1207c50e982)
 
+---
+## Future Work 
+While the current MVP lays a solid foundation, several areas have been identified for future improvement and development:
+
+* **Prompt Refinement & Tool Expansion**:
+     * Fine-tuning specific node prompts and expanding the system’s toolset will improve reliability and adaptability in more complex scenarios.
+* **Integration of Additional Managers**:
+    * Incorporate new functional modules, such as a contact manager, web search manager, or even enterprise data connectors, to enrich the assistant's capabilities and make it more versatile in business settings.
+* **Improved Error Handling**:
+    * Enhance the system’s ability to handle tool/API failures gracefully, especially under high uncertainty or incomplete user input.
+* **Scalability Testing**:
+  * Conduct stress tests with more users and concurrent workflows to ensure the architecture scales effectively in production environments.
 
 ---
+
