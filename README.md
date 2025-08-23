@@ -1,10 +1,10 @@
 # Alloy Agent
 AI multi-agent system for Work/Personal Gmail & Google Calendar management deployed as a Discord bot.
 
-<img width="500" height="500" alt="ChatGPT Image Aug 21, 2025, 10_48_40 PM" src="https://github.com/user-attachments/assets/421f9a36-fbac-4f11-aa00-795be2b93435" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/421f9a36-fbac-4f11-aa00-795be2b93435" width="300" height="300" alt="ChatGPT Image"/>
+</p>
 
-
----
 
 ## What It Does?
 
