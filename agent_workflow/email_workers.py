@@ -3,7 +3,6 @@ import os
 from langchain_core.messages import BaseMessage, AnyMessage
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from config.config import Config
 from composio_langchain import ComposioToolSet
 from typing import Annotated, Any, Literal, Sequence
 from langgraph.graph import StateGraph
@@ -91,6 +90,7 @@ You excel at managing emails efficiently using available tools while adhering to
   - Example: `February 21, 2025, 11:00`
 - Include in the user's answer the `thread_id` and labels of the each email.
 - It is mandatory to explicitly state in the user's answer  that the email information is **based on {email_info}**
+- It is manadatory to format all this properly format the message using good markdowns techniques. That would be readable and professional.
 """
 
 
@@ -111,7 +111,7 @@ def tools_condition_worker(
 
 
 composio_toolset = ComposioToolSet()
-config = Config()
+
 llm = ChatOpenAI(model=config.get("configurable", "llm-model"),
                               temperature=config.get("configurable", "llm-temperature"),
                              base_url="https://api.aimlapi.com/v1")

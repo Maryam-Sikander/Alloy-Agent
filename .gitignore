@@ -7,6 +7,3 @@ local
 .DS_Store
 .idea
 .composio.lock
-docker-compose.yml
-Dockerfile
-
